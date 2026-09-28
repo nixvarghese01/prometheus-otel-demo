@@ -90,10 +90,15 @@ func (conf *Config) initConnection() {
 		log.Println("Producing " + fmt.Sprintf("%d", conf.MetricsCount) + " metric(s) per type")
 	}
 
+	// Register handlers before serving requests and avoid mutating the global mux.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", healthCheckHandler)
+	mux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
+
 	// Server handling
 	srv := &http.Server{
 		Addr:    conf.Address,
-		Handler: nil,
+		Handler: mux,
 	}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -104,9 +109,6 @@ func (conf *Config) initConnection() {
 		}
 	}()
 	log.Println("Updating at a frequency of "+fmt.Sprintf("%d", mc.interval/time.Second), "seconds")
-	http.HandleFunc("/", healthCheckHandler)
-	http.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
-
 	<-done
 	log.Print("Server Stopped")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
