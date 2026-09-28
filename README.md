@@ -1,4 +1,8 @@
-# prometheus-sample-app
+# observability: Prometheus Sample App with an OpenTelemetry Collector
+
+A Go app that emits sample Prometheus metrics, plus Kubernetes manifests to scrape them with an OpenTelemetry Collector. It's used for experimenting with observability pipelines.
+
+## prometheus-sample-app
 
 This Prometheus sample app generates all 4 Prometheus metric types (counter, gauge, histogram, summary) and exposes them at the `/metrics` endpoint
 
@@ -132,3 +136,12 @@ Deploy the example deployment configuration of 5 instances of Prometheus-Sample-
     ```
 
 Currently, OTEL Collector is configured with Logging exporter. In this example, all replica Prometheus-Sample-App pods will produce identical metrics, and the Prometheus Exporter doesn't ingest identical metrics (same name and label) from different sources.
+
+## Kubernetes
+```bash
+kubectl apply -f prometheus-sample-app-k8s-deployment.yaml
+kubectl apply -f otel-collector-k8s-deployment.yaml   # collector config lives in config.yaml
+```
+
+## CI
+[`.github/workflows/go1.yml`](.github/workflows/go1.yml) runs on every push and PR to `main`. It builds and tests with Go 1.18, then builds and pushes the Docker image `nixvarghese03/prometheus-sample-app` using the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
